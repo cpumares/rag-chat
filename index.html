@@ -2,11 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<title> Chat con criterios DGSFP </title>
+<title>Chat con criterios DGSFP</title>
+
 <style>
+  /* ——— Layout general ——— */
   body{
     font-family:sans-serif;
-    max-width:600px;
+    max-width:900px;          /* ① MÁS ANCHO (antes 600 px) */
     margin:auto;
     padding:1rem;
   }
@@ -16,22 +18,22 @@
     height:60vh;
     overflow-y:auto;
   }
-  .msg{margin:.4rem 0}
-  .user{color:#006cbb}
-  .bot{color:#222}
 
-  /* Enlaces clicables */
+  /* ——— Mensajes ——— */
+  .msg{margin:.4rem 0}
+  .user{color:#006cbb;font-weight:600}
+  .bot {color:#222}
+
+  /* ——— Enlaces dentro del chat ——— */
   #chat a{
     color:#0077cc;
     text-decoration:underline;
   }
-  #chat a:hover{
-    text-decoration:none;
-  }
+  #chat a:hover{text-decoration:none}
 
-  /* Cuadro de entrada */
-  input#prompt{
-    width:100%;
+  /* ——— Cuadro de entrada ——— */
+  #prompt{                       /* ② usa id="prompt" */
+    width:100%;                 /* ocupa todo el contenedor */
     padding:.6rem;
     font-size:1rem;
     box-sizing:border-box;
@@ -42,42 +44,67 @@
 <body>
 
 <h2>Asistente RAG DGSFP</h2>
+
 <div id="chat"></div>
+
 <form id="form">
-  <input id="txt" placeholder="Escribe tu pregunta sobre criterios DGSFP" autocomplete="off" />
+  <input id="prompt" placeholder="Escribe tu pregunta sobre criterios DGSFP"
+         autocomplete="off" />
 </form>
 
 <script>
-const webhook ="https://antoniosautomationcentral.duckdns.org/webhook/ceb907d0-9012-4c5c-9b3d-90ee88761ba5";   // ← pon aquí la URL
+/* URL de tu webhook n8n — producción */
+const WEBHOOK = "https://antoniosautomationcentral.duckdns.org/webhook/ceb907d0-9012-4c5c-9b3d-90ee88761ba5";
 
-const chat = document.getElementById("chat");
-const txt  = document.getElementById("txt");
+/* utilidades DOM */
+const chat   = document.getElementById("chat");
+const prompt = document.getElementById("prompt");
 
-function add(text, cls){
-  const div=document.createElement("div");
-  div.className="msg "+cls;
-  div.textContent=text;
-  chat.appendChild(div);
-  chat.scrollTop=chat.scrollHeight;
+/* ③ Convierte cualquier http/https en enlace clicable */
+function linkify (str){
+  return str.replace(
+    /(https?:\/\/[^\s]+)/g,
+    '<a href="$1" target="_blank" rel="noopener">$1</a>'
+  );
 }
 
+/* Añadir un mensaje al chat */
+function add(text, cls, html = false){
+  const div = document.createElement("div");
+  div.className = "msg " + cls;
+  if(html){
+    div.innerHTML = text;      /* se inserta como HTML (para enlaces) */
+  }else{
+    div.textContent = text;
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* Enviar pregunta → webhook */
 document.getElementById("form").addEventListener("submit", async e=>{
   e.preventDefault();
-  const q = txt.value.trim();
+  const q = prompt.value.trim();
   if(!q) return;
-  add(q,"user");      // muestra mensaje del usuario
-  txt.value="";
+
+  /* mensaje del usuario */
+  add(q, "user");
+  prompt.value = "";
 
   try{
-    const res = await fetch(webhook,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ question: q })
+    const res  = await fetch(WEBHOOK,{
+      method :"POST",
+      headers: { "Content-Type":"application/json" },
+      body    : JSON.stringify({ question:q })
     });
-    const data = await res.json();     // espera { answer:"..." }
-    add(data.answer || "[sin respuesta]","bot");
+
+    const data = await res.json();       // { answer:"..." }
+    const answer = data.answer || "[sin respuesta]";
+    /* mensaje del bot con enlaces clicables */
+    add(linkify(answer), "bot", true);
+
   }catch(err){
-    add("Error: "+err,"bot");
+    add("Error: "+ err, "bot");
   }
 });
 </script>
