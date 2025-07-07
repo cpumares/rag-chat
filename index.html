@@ -106,29 +106,12 @@ document.getElementById("form").addEventListener("submit", async e=>{
 
 /* ----------------- Decodificador de PDF -------------------- */
 /* Escucha clics en enlaces insertados por el bot */
-chat.addEventListener("click", async ev=>{
-  const a = ev.target.closest('a[data-url]');
-  if(!a) return;                   // no es nuestro enlace
-  ev.preventDefault();
+chat.addEventListener('click', e => {
+  const a = e.target.closest('a');
+  if (!a || !a.href.includes('/webhook/pdf')) return;
 
-  const apiUrl = a.dataset.url;    // …/obtenerDatosDocumento?d=123
-  try{
-    const res  = await fetch(apiUrl);
-    const json = await res.json(); // <-- devuelve base-64
-
-    /* Ajusta aquí el nombre real del campo que contiene la base-64 */
-    const b64  = json.contenidoDocumento || json.file || json.data;
-    if(!b64) throw "No se encontró el PDF en la respuesta";
-
-    /* base-64  →  bytes */
-    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const blob  = new Blob([bytes], { type:"application/pdf" });
-    const url   = URL.createObjectURL(blob);
-
-    window.open(url,"_blank");
-  }catch(err){
-    add("Error al abrir el PDF: "+err,"bot");
-  }
+  e.preventDefault();           // no navegues de forma normal
+  window.open(a.href, '_blank');  // abre el PDF en nueva pestaña
 });
 </script>
 </body>
