@@ -72,13 +72,15 @@ function add(text, cls){
   div.className = "msg "+cls;
 
   /* Sustituimos URLs por enlaces clicables que NO navegan */
-  div.innerHTML = text.replace(
-    /(https?:\/\/\S+)/g,
-    raw => {
-      const url = sanitizeUrl(raw);
-      return `<a href="#" data-url="${url}">${url}</a>`;
-    }
-  );
+div.innerHTML = text.replace(
+  /(https?:\/\/\S+)/g,
+  raw => {
+    const url = sanitizeUrl(raw);
+    //   ↓↓↓↓↓   usa el propio url en href
+    return `<a href="${url}" target="_blank">${url}</a>`;
+  }
+);
+
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
